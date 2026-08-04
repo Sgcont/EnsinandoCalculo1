@@ -1,467 +1,1004 @@
-import random
-
-import streamlit as st
-
-
-st.set_page_config(page_title="Ensinando Cálculo 1", page_icon="📘", layout="wide")
-
-st.title("📘 Ensinando Cálculo 1")
-st.write("Plataforma de estudo para quem está entrando em Cálculo 1.")
-
-pagina = st.sidebar.radio("Navegação", ["Conteúdo", "Simuladores", "Questões"])
-
-CONTEUDOS = [
-    {
-        "titulo": "Funções e interpretação gráfica",
-        "explicacao": "Uma função relaciona cada valor de x a um único valor de y. "
-        "No gráfico, observe interceptos, domínio, imagem e tendência.",
-        "formula": "y = f(x)",
-        "exemplo": "f(x)=x² cresce para x>0 e decresce para x<0.",
-    },
-    {
-        "titulo": "Limites",
-        "explicacao": "Limite descreve o valor para o qual f(x) se aproxima quando x se aproxima de a.",
-        "formula": "lim x→a f(x)",
-        "exemplo": "lim x→2 (x²-4)/(x-2) = 4.",
-    },
-    {
-        "titulo": "Indeterminações",
-        "explicacao": "Formas como 0/0 e ∞/∞ pedem mais manipulação algébrica antes de concluir o limite.",
-        "formula": "0/0, ∞/∞, ∞-∞, 0·∞, 1^∞",
-        "exemplo": "(x²-4)/(x-2) vira (x+2) para x≠2.",
-    },
-    {
-        "titulo": "Continuidade",
-        "explicacao": "Uma função é contínua em a quando limite e valor da função no ponto coincidem.",
-        "formula": "lim x→a f(x) = f(a)",
-        "exemplo": "Polinômios são contínuos em todo número real.",
-    },
-    {
-        "titulo": "Definição de derivada",
-        "explicacao": "Derivada é taxa de variação instantânea.",
-        "formula": "f'(a)=lim h→0 [f(a+h)-f(a)]/h",
-        "exemplo": "Para f(x)=x², f'(x)=2x.",
-    },
-    {
-        "titulo": "Derivada como inclinação da reta tangente",
-        "explicacao": "f'(a) mede a inclinação da reta tangente ao gráfico em x=a.",
-        "formula": "y - f(a) = f'(a)(x-a)",
-        "exemplo": "Em f(x)=x² e a=1, inclinação = 2.",
-    },
-    {
-        "titulo": "Regras de derivação",
-        "explicacao": "Facilitam derivar sem usar o limite em toda conta.",
-        "formula": "(f+g)'=f'+g' e (x^n)'=n·x^(n-1)",
-        "exemplo": "(3x⁵ - 2x)' = 15x⁴ - 2.",
-    },
-    {
-        "titulo": "Regra do produto",
-        "explicacao": "Para derivar u(x)v(x), derive uma parte por vez.",
-        "formula": "(uv)' = u'v + uv'",
-        "exemplo": "(x²·sen x)' = 2x·sen x + x²·cos x.",
-    },
-    {
-        "titulo": "Regra do quociente",
-        "explicacao": "Usada para funções em fração.",
-        "formula": "(u/v)' = (u'v - uv')/v²",
-        "exemplo": "(x/(x+1))' = 1/(x+1)².",
-    },
-    {
-        "titulo": "Regra da cadeia",
-        "explicacao": "Para composição de funções: derivada da de fora vezes derivada da de dentro.",
-        "formula": "(f(g(x)))' = f'(g(x))·g'(x)",
-        "exemplo": "d/dx[(3x+1)^5] = 5(3x+1)^4·3.",
-    },
-    {
-        "titulo": "Derivadas trigonométricas, exponenciais e logarítmicas",
-        "explicacao": "Família-base muito usada em problemas reais.",
-        "formula": "(sen x)'=cos x, (e^x)'=e^x, (ln x)'=1/x",
-        "exemplo": "d/dx[e^x·ln x] = e^x·ln x + e^x/x.",
-    },
-    {
-        "titulo": "Máximos e mínimos",
-        "explicacao": "Ocorrem em pontos críticos onde f'(x)=0 ou f' não existe.",
-        "formula": "Pontos críticos: f'(x)=0 ou indefinida",
-        "exemplo": "f(x)=x² tem mínimo em x=0.",
-    },
-    {
-        "titulo": "Crescimento e decrescimento",
-        "explicacao": "Sinal da derivada indica comportamento da função.",
-        "formula": "f'(x)>0 cresce | f'(x)<0 decresce",
-        "exemplo": "f(x)=x³ cresce para todo x.",
-    },
-    {
-        "titulo": "Concavidade",
-        "explicacao": "Vem da segunda derivada.",
-        "formula": "f''(x)>0 côncava para cima | f''(x)<0 para baixo",
-        "exemplo": "f(x)=x² é côncava para cima em todo x.",
-    },
-    {
-        "titulo": "Problemas de otimização",
-        "explicacao": "Transforme o contexto em função objetivo e maximize/minimize com derivadas.",
-        "formula": "Encontrar extremos de f(x) sob restrições",
-        "exemplo": "Maximizar área de retângulo com perímetro fixo.",
-    },
-    {
-        "titulo": "Integral definida",
-        "explicacao": "Representa acumulação líquida no intervalo [a,b].",
-        "formula": "∫[a,b] f(x)dx",
-        "exemplo": "Se f≥0, interpreta-se como área sob a curva.",
-    },
-    {
-        "titulo": "Soma de Riemann",
-        "explicacao": "A integral aparece como limite de somas de retângulos.",
-        "formula": "Σ f(xi*)Δx",
-        "exemplo": "Quanto maior n, melhor a aproximação da área.",
-    },
-    {
-        "titulo": "Integral como área acumulada",
-        "explicacao": "A função área A(x)=∫[a,x] f(t)dt acumula variações de f.",
-        "formula": "A(x)=∫[a,x] f(t)dt",
-        "exemplo": "Se f é velocidade, A acumula deslocamento.",
-    },
-    {
-        "titulo": "Teorema Fundamental do Cálculo",
-        "explicacao": "Conecta derivada e integral.",
-        "formula": "Se F'=f, então ∫[a,b] f(x)dx = F(b)-F(a)",
-        "exemplo": "∫[0,2] x²dx = (x³/3)|0^2 = 8/3.",
-    },
-    {
-        "titulo": "Integração por substituição",
-        "explicacao": "Troca de variável para simplificar integrais compostas.",
-        "formula": "u=g(x), du=g'(x)dx",
-        "exemplo": "∫2x·cos(x²)dx = ∫cos(u)du = sen(u)+C.",
-    },
-    {
-        "titulo": "Integração por partes",
-        "explicacao": "Ideal para produto de funções.",
-        "formula": "∫u dv = uv - ∫v du",
-        "exemplo": "∫x·e^x dx = x·e^x - ∫e^x dx.",
-    },
-    {
-        "titulo": "Área entre curvas",
-        "explicacao": "Subtraia curva de baixo da curva de cima.",
-        "formula": "A = ∫[a,b] (f(x)-g(x))dx",
-        "exemplo": "Entre y=x e y=x² em [0,1], A=1/6.",
-    },
-    {
-        "titulo": "Volume por discos",
-        "explicacao": "Sólido de revolução sem furo.",
-        "formula": "V = π∫[a,b] R(x)² dx",
-        "exemplo": "Rotação de y=x em [0,1] gera V=π/3.",
-    },
-    {
-        "titulo": "Volume por anéis",
-        "explicacao": "Sólido com raio externo e interno.",
-        "formula": "V = π∫[a,b] (R(x)²-r(x)²)dx",
-        "exemplo": "Diferença entre dois volumes por discos.",
-    },
-    {
-        "titulo": "Comprimento de arco",
-        "explicacao": "Mede o tamanho da curva y=f(x) em [a,b].",
-        "formula": "L = ∫[a,b] √(1+(f'(x))²)dx",
-        "exemplo": "Exige derivada e integração na mesma expressão.",
-    },
-]
-
-QUESTOES = [
-    {
-        "topico": "Funções",
-        "pergunta": "A imagem de uma função representa:",
-        "opcoes": ["Os valores possíveis de x", "Os valores produzidos de y", "Os pontos críticos", "A derivada da função"],
-        "correta": 1,
-    },
-    {
-        "topico": "Limites",
-        "pergunta": "O valor de lim x→2 (x²-4)/(x-2) é:",
-        "opcoes": ["0", "2", "4", "Não existe"],
-        "correta": 2,
-    },
-    {
-        "topico": "Indeterminações",
-        "pergunta": "A forma 0/0 indica:",
-        "opcoes": ["Limite igual a zero", "Limite inexistente", "Indeterminação que exige manipulação", "Erro de cálculo sem solução"],
-        "correta": 2,
-    },
-    {
-        "topico": "Continuidade",
-        "pergunta": "Para f ser contínua em a, precisamos de:",
-        "opcoes": ["f(a)=0", "lim x→a f(x)=f(a)", "f'(a)=0", "f''(a)>0"],
-        "correta": 1,
-    },
-    {
-        "topico": "Definição de derivada",
-        "pergunta": "Qual expressão define f'(a)?",
-        "opcoes": ["lim h→0 [f(a+h)-f(a)]/h", "lim h→∞ [f(a+h)-f(a)]/h", "f(a+h)/h", "[f(a)-f(h)]/a"],
-        "correta": 0,
-    },
-    {
-        "topico": "Reta tangente",
-        "pergunta": "Geometricamente, a derivada em um ponto mede:",
-        "opcoes": ["A área sob a curva", "A inclinação da tangente", "A concavidade", "O comprimento de arco"],
-        "correta": 1,
-    },
-    {
-        "topico": "Regras de derivação",
-        "pergunta": "A derivada de x^7 é:",
-        "opcoes": ["7x^6", "x^6", "6x^7", "7x"],
-        "correta": 0,
-    },
-    {
-        "topico": "Regra do produto",
-        "pergunta": "Se y=u·v, então y' é:",
-        "opcoes": ["u'v'", "u'v + uv'", "(u'+v')", "(u/v)'"],
-        "correta": 1,
-    },
-    {
-        "topico": "Regra do quociente",
-        "pergunta": "A regra correta para (u/v)' é:",
-        "opcoes": ["(u'v + uv')/v²", "(u'v - uv')/v²", "u'/v'", "(u-v)'"],
-        "correta": 1,
-    },
-    {
-        "topico": "Regra da cadeia",
-        "pergunta": "Para y=(3x+1)^5, a derivada envolve:",
-        "opcoes": ["Regra do produto", "Regra da cadeia", "Soma de Riemann", "L'Hôpital"],
-        "correta": 1,
-    },
-    {
-        "topico": "Trig/exp/log",
-        "pergunta": "A derivada de ln(x), para x>0, é:",
-        "opcoes": ["x", "1/x", "e^x", "ln(x)"],
-        "correta": 1,
-    },
-    {
-        "topico": "Máximos e mínimos",
-        "pergunta": "Um ponto crítico ocorre quando:",
-        "opcoes": ["f(x)=0", "f'(x)=0 ou não existe", "f''(x)=0 apenas", "f(a)=lim x→∞ f(x)"],
-        "correta": 1,
-    },
-    {
-        "topico": "Crescimento/decrescimento",
-        "pergunta": "Se f'(x)<0 num intervalo, f é:",
-        "opcoes": ["Crescente", "Constante", "Decrescente", "Periódica"],
-        "correta": 2,
-    },
-    {
-        "topico": "Concavidade",
-        "pergunta": "Se f''(x)>0, então a função é:",
-        "opcoes": ["Côncava para cima", "Côncava para baixo", "Constante", "Sem derivada"],
-        "correta": 0,
-    },
-    {
-        "topico": "Otimização",
-        "pergunta": "Em otimização, após modelar a função objetivo, normalmente buscamos:",
-        "opcoes": ["Limites laterais", "Pontos críticos", "Somas geométricas", "Séries de Fourier"],
-        "correta": 1,
-    },
-    {
-        "topico": "Integral definida",
-        "pergunta": "A integral definida em [a,b] representa:",
-        "opcoes": ["Taxa instantânea", "Acumulação líquida", "Apenas derivada", "Somente volume"],
-        "correta": 1,
-    },
-    {
-        "topico": "Soma de Riemann",
-        "pergunta": "Ao aumentar o número de retângulos em uma soma de Riemann:",
-        "opcoes": ["A aproximação piora", "A aproximação melhora", "Nada muda", "O limite deixa de existir"],
-        "correta": 1,
-    },
-    {
-        "topico": "Área acumulada",
-        "pergunta": "Se f(x)≥0, então ∫[a,b] f(x)dx pode ser vista como:",
-        "opcoes": ["Inclinação média", "Área sob a curva", "Concavidade média", "Raiz da função"],
-        "correta": 1,
-    },
-    {
-        "topico": "Teorema Fundamental",
-        "pergunta": "Se F'=f, então ∫[a,b] f(x)dx é:",
-        "opcoes": ["f(b)-f(a)", "F(b)-F(a)", "f'(b)-f'(a)", "F'(b)-F'(a)"],
-        "correta": 1,
-    },
-    {
-        "topico": "Substituição",
-        "pergunta": "Integração por substituição é útil quando:",
-        "opcoes": ["Há função composta", "Há fração simples", "Não há derivadas", "A função é constante"],
-        "correta": 0,
-    },
-    {
-        "topico": "Por partes",
-        "pergunta": "A fórmula de integração por partes é:",
-        "opcoes": ["∫u dv = uv - ∫v du", "∫u dv = du/dv", "∫u dv = u+v", "∫u dv = uv"],
-        "correta": 0,
-    },
-    {
-        "topico": "Área entre curvas",
-        "pergunta": "A área entre curvas usa:",
-        "opcoes": ["∫(curva de cima - curva de baixo)dx", "∫(curva de baixo - curva de cima)dx", "∫f'(x)dx", "∫(R²-r²)dx"],
-        "correta": 0,
-    },
-    {
-        "topico": "Volume por discos",
-        "pergunta": "No método dos discos, a expressão típica é:",
-        "opcoes": ["π∫R²dx", "2π∫Rdx", "π∫(R²-r²)dx", "∫√(1+f'²)dx"],
-        "correta": 0,
-    },
-    {
-        "topico": "Volume por anéis",
-        "pergunta": "No método dos anéis, usamos:",
-        "opcoes": ["π∫(R²-r²)dx", "π∫R²dx", "2π∫Rdx", "∫f(x)dx"],
-        "correta": 0,
-    },
-    {
-        "topico": "Comprimento de arco",
-        "pergunta": "Para y=f(x), o comprimento de arco em [a,b] é:",
-        "opcoes": ["∫[a,b] f(x)dx", "∫[a,b] √(1+(f'(x))²)dx", "π∫[a,b] f(x)²dx", "∫[a,b] f''(x)dx"],
-        "correta": 1,
-    },
-]
-
-
-def arredonda(valor: float) -> float:
-    return float(f"{valor:.6f}")
-
-
-def f_limite(x: float) -> float:
-    return (x * x - 4) / (x - 2)
-
-
-def f_exemplo(x: float) -> float:
-    return x * x
-
-
-def reta_tangente(a: float, x: float) -> float:
-    return f_exemplo(a) + (2 * a) * (x - a)
-
-
-def soma_riemann_esquerda(a: float, b: float, n: int) -> float:
-    dx = (b - a) / n
-    acumulado = 0.0
-    for i in range(n):
-        xi = a + i * dx
-        acumulado += f_exemplo(xi) * dx
-    return acumulado
-
-
-def integral_exata_x2(a: float, b: float) -> float:
-    return (b**3 - a**3) / 3
-
-
-if pagina == "Conteúdo":
-    st.header("Página de conteúdo")
-    st.write("Resumo dos tópicos-chave para sua base de Cálculo 1.")
-    for item in CONTEUDOS:
-        with st.expander(item["titulo"], expanded=False):
-            st.write(item["explicacao"])
-            st.caption(f"**Fórmula-base:** {item['formula']}")
-            st.caption(f"**Exemplo rápido:** {item['exemplo']}")
-
-    st.success(
-        "Sequência recomendada de estudo: Funções → Limites → Continuidade → Derivadas "
-        "→ Aplicações de Derivadas → Integrais → Aplicações de Integrais."
+import html
+import numpy as np
+import matplotlib.pyplot as plt
+import ipywidgets as widgets
+from IPython.display import display, clear_output
+ 
+ 
+# Caixa 2 - Textos de cada aba (mesmo conteúdo do guia original)
+ 
+texto_inicio = """
+BEM-VINDO AO CÁLCULO I!
+ 
+Este programa foi pensado como uma introdução completa aos principais
+conceitos normalmente encontrados em uma disciplina de Cálculo I.
+ 
+A ideia principal é:
+ 
+        LIMITE
+           ↓
+     CONTINUIDADE
+           ↓
+       DERIVADA
+           ↓
+    APLICAÇÕES
+           ↓
+       INTEGRAL
+           ↓
+    TEOREMA FUNDAMENTAL
+           ↓
+    APLICAÇÕES DA INTEGRAL
+ 
+ 
+POR QUE COMEÇAMOS PELO LIMITE?
+ 
+Porque o Cálculo inteiro gira em torno da ideia de "aproximação".
+ 
+A derivada pergunta:
+ 
+    "O que acontece com a variação quando o intervalo fica
+     infinitamente pequeno?"
+ 
+A integral pergunta:
+ 
+    "O que acontece quando somamos infinitas pequenas contribuições?"
+ 
+Essas duas ideias parecem diferentes, mas estão profundamente conectadas.
+ 
+ 
+COMO ESTUDAR
+ 
+1. Leia a explicação.
+2. Observe as fórmulas.
+3. Execute os gráficos.
+4. Tente explicar o conceito com suas próprias palavras.
+5. Resolva exercícios depois.
+ 
+ 
+IMPORTANTE
+ 
+Este programa é um guia didático.
+ 
+A matéria exata de Cálculo I varia de universidade para universidade.
+Alguns tópicos podem aparecer em Cálculo II ou em disciplinas posteriores.
+ 
+A intenção aqui é criar uma base ampla e intuitiva.
+"""
+ 
+texto_funcoes = """
+1 — FUNÇÕES
+ 
+Uma função associa cada valor de entrada a um valor de saída.
+ 
+Podemos escrever:
+ 
+    y = f(x)
+ 
+Por exemplo:
+ 
+    f(x) = x²
+ 
+Se x = 2:
+ 
+    f(2) = 4
+ 
+ 
+DOMÍNIO
+ 
+É o conjunto dos valores que podemos colocar em x.
+ 
+Exemplo:
+ 
+    f(x) = 1/x
+ 
+Aqui:
+ 
+    x ≠ 0
+ 
+Portanto, o domínio é:
+ 
+    R - {0}
+ 
+ 
+IMAGEM
+ 
+É o conjunto dos valores que a função pode produzir.
+ 
+ 
+FUNÇÕES IMPORTANTES
+ 
+Polinomial:
+ 
+    f(x) = x² + 3x - 1
+ 
+Exponencial:
+ 
+    f(x) = eˣ
+ 
+Logarítmica:
+ 
+    f(x) = ln(x)
+ 
+Trigonométricas:
+ 
+    sen(x)
+    cos(x)
+    tan(x)
+ 
+ 
+POR QUE FUNÇÕES SÃO IMPORTANTES?
+ 
+Porque praticamente todo o Cálculo pode ser interpretado como o estudo
+do comportamento de funções.
+ 
+Queremos descobrir:
+ 
+    • para onde a função vai;
+    • se ela é contínua;
+    • quão rapidamente ela muda;
+    • onde cresce;
+    • onde decresce;
+    • onde possui máximos e mínimos;
+    • quanto ela acumula.
+"""
+ 
+texto_limites = """
+2 — LIMITES
+ 
+O limite descreve para qual valor uma função está se aproximando.
+ 
+Escrevemos:
+ 
+        lim f(x)
+        x→a
+ 
+ 
+EXEMPLO
+ 
+Considere:
+ 
+    f(x) = x²
+ 
+Quando x se aproxima de 2:
+ 
+    x → 2
+ 
+temos:
+ 
+    x² → 4
+ 
+Portanto:
+ 
+    lim x² = 4
+    x→2
+ 
+ 
+A IDEIA MAIS IMPORTANTE
+ 
+O limite não está necessariamente interessado no valor da função
+exatamente em x = a.
+ 
+Ele quer saber:
+ 
+    "O que acontece com f(x) quando x fica cada vez mais próximo
+     de a?"
+ 
+ 
+LIMITES LATERAIS
+ 
+Podemos nos aproximar pela esquerda:
+ 
+    lim f(x)
+    x→a⁻
+ 
+ou pela direita:
+ 
+    lim f(x)
+    x→a⁺
+ 
+ 
+Para o limite existir:
+ 
+    limite pela esquerda = limite pela direita
+ 
+ 
+INFINITO
+ 
+Podemos estudar também:
+ 
+    lim f(x)
+    x→∞
+ 
+Isso pergunta o comportamento da função quando x cresce
+indefinidamente.
+ 
+ 
+INDETERMINAÇÕES
+ 
+Algumas expressões produzem formas indeterminadas:
+ 
+    0/0
+    ∞/∞
+    ∞ - ∞
+    0 · ∞
+    1^∞
+    0^0
+    ∞^0
+ 
+IMPORTANTE:
+ 
+Uma indeterminação NÃO significa que o limite não existe.
+ 
+Significa apenas:
+ 
+    "Ainda não temos informação suficiente."
+ 
+ 
+TÉCNICAS
+ 
+Podemos usar:
+ 
+    • fatoração
+    • racionalização
+    • simplificação algébrica
+    • limites fundamentais
+    • substituições
+    • regra de L'Hôpital (quando aplicável)
+ 
+ 
+LIMITES FUNDAMENTAIS
+ 
+Um dos mais importantes:
+ 
+        sen(x)
+lim     ────── = 1
+x→0      x
+ 
+ 
+Outro:
+ 
+        eˣ - 1
+lim     ────── = 1
+x→0       x
+"""
+ 
+texto_derivadas = """
+3 — DERIVADAS
+ 
+A derivada mede uma taxa de variação instantânea.
+ 
+Imagine um carro.
+ 
+A velocidade média é:
+ 
+        Δposição
+        ────────
+        Δtempo
+ 
+Mas queremos saber a velocidade exatamente em um instante.
+ 
+Então fazemos:
+ 
+        Δposição
+lim     ────────
+Δt→0    Δtempo
+ 
+ 
+DEFINIÇÃO DA DERIVADA
+ 
+        f(x+h) - f(x)
+f'(x)= lim ───────────
+       h→0      h
+ 
+ 
+INTERPRETAÇÃO GEOMÉTRICA
+ 
+A derivada é a inclinação da reta tangente ao gráfico.
+ 
+ 
+SE:
+ 
+    f'(x) > 0
+ 
+a função está crescendo.
+ 
+ 
+SE:
+ 
+    f'(x) < 0
+ 
+a função está decrescendo.
+ 
+ 
+SE:
+ 
+    f'(x) = 0
+ 
+podemos estar diante de um máximo, mínimo ou outro ponto crítico.
+ 
+ 
+REGRAS BÁSICAS
+ 
+Constante:
+ 
+    d/dx(c) = 0
+ 
+ 
+Potência:
+ 
+    d/dx(xⁿ) = n·xⁿ⁻¹
+ 
+ 
+Soma:
+ 
+    (f + g)' = f' + g'
+ 
+ 
+Produto:
+ 
+    (fg)' = f'g + fg'
+ 
+ 
+Quociente:
+ 
+    (f/g)' = (f'g - fg') / g²
+ 
+ 
+REGRA DA CADEIA
+ 
+Se:
+ 
+    y = f(g(x))
+ 
+então:
+ 
+    y' = f'(g(x)) · g'(x)
+ 
+ 
+DERIVADAS IMPORTANTES
+ 
+    d/dx(sen x) = cos x
+ 
+    d/dx(cos x) = -sen x
+ 
+    d/dx(tan x) = sec² x
+ 
+    d/dx(eˣ) = eˣ
+ 
+    d/dx(ln x) = 1/x
+ 
+ 
+A DERIVADA É UMA DAS GRANDES IDEIAS DO CÁLCULO.
+ 
+Ela permite estudar:
+ 
+    • velocidade
+    • crescimento
+    • máximos
+    • mínimos
+    • otimização
+    • comportamento de gráficos
+    • taxas relacionadas
+"""
+ 
+texto_aplicacoes_derivadas = """
+4 — APLICAÇÕES DAS DERIVADAS
+ 
+ 
+CRESCIMENTO E DECRESCIMENTO
+ 
+Se:
+ 
+    f'(x) > 0
+ 
+a função cresce.
+ 
+Se:
+ 
+    f'(x) < 0
+ 
+a função decresce.
+ 
+ 
+PONTOS CRÍTICOS
+ 
+Um ponto crítico ocorre quando:
+ 
+    f'(x) = 0
+ 
+ou quando a derivada não existe.
+ 
+ 
+MÁXIMO LOCAL
+ 
+A função passa de crescente para decrescente.
+ 
+ 
+MÍNIMO LOCAL
+ 
+A função passa de decrescente para crescente.
+ 
+ 
+TESTE DA PRIMEIRA DERIVADA
+ 
+Observe o sinal de f'(x).
+ 
+    + → -
+ 
+indica máximo.
+ 
+    - → +
+ 
+indica mínimo.
+ 
+ 
+SEGUNDA DERIVADA
+ 
+A segunda derivada:
+ 
+    f''(x)
+ 
+ajuda a estudar a concavidade.
+ 
+ 
+SE:
+ 
+    f''(x) > 0
+ 
+a função é côncava para cima.
+ 
+ 
+SE:
+ 
+    f''(x) < 0
+ 
+a função é côncava para baixo.
+ 
+ 
+PONTO DE INFLEXÃO
+ 
+É um ponto onde a concavidade muda.
+ 
+ 
+OTIMIZAÇÃO
+ 
+Problemas de otimização procuram:
+ 
+    máximo possível
+ 
+ou
+ 
+    mínimo possível
+ 
+ 
+Exemplo:
+ 
+Queremos construir um retângulo com determinada quantidade
+de material e maximizar sua área.
+ 
+Criamos uma função:
+ 
+    A(x)
+ 
+Depois calculamos:
+ 
+    A'(x)
+ 
+e procuramos os pontos críticos.
+ 
+ 
+TAXAS RELACIONADAS
+ 
+Imagine duas grandezas variando ao mesmo tempo:
+ 
+    volume
+    raio
+    altura
+ 
+Podemos relacioná-las através de derivadas.
+ 
+Por exemplo:
+ 
+    V = πr²h
+ 
+Se r e h mudam com o tempo:
+ 
+    dV/dt
+ 
+pode ser relacionado com:
+ 
+    dr/dt
+ 
+e
+ 
+    dh/dt.
+"""
+ 
+texto_integrais = """
+5 — INTEGRAIS
+ 
+Agora chegamos a uma das ideias mais importantes do Cálculo.
+ 
+ 
+A PERGUNTA
+ 
+Imagine a região abaixo de uma curva:
+ 
+        y = f(x)
+ 
+Queremos descobrir sua área.
+ 
+Para algumas figuras é fácil.
+ 
+Retângulo:
+ 
+    A = base × altura
+ 
+Mas e se a curva for complicada?
+ 
+ 
+A IDEIA DE RIEMANN
+ 
+Dividimos a região em muitos retângulos pequenos.
+ 
+A área aproximada é:
+ 
+    A ≈ Σ f(xᵢ) Δx
+ 
+ 
+Quanto mais retângulos usamos:
+ 
+    Δx → 0
+ 
+e o número de retângulos cresce.
+ 
+ 
+A INTEGRAL DEFINIDA
+ 
+Escrevemos:
+ 
+        b
+    ∫   f(x) dx
+        a
+ 
+ 
+Ela representa o limite dessas somas.
+ 
+ 
+INTERPRETAÇÃO
+ 
+A integral pode representar:
+ 
+    • área
+    • distância acumulada
+    • massa
+    • volume
+    • trabalho
+    • quantidade acumulada
+ 
+ 
+INTEGRAL INDEFINIDA
+ 
+Também podemos procurar uma função cuja derivada seja f(x).
+ 
+Por exemplo:
+ 
+    ∫ x² dx
+ 
+queremos uma função F tal que:
+ 
+    F'(x) = x²
+ 
+Como:
+ 
+    d/dx(x³/3) = x²
+ 
+temos:
+ 
+    ∫ x² dx = x³/3 + C
+ 
+ 
+REGRA DA POTÊNCIA
+ 
+        xⁿ⁺¹
+∫ xⁿ dx = ──── + C
+         n+1
+ 
+ 
+para n ≠ -1.
+ 
+ 
+EXEMPLO
+ 
+    ∫ 2x dx = x² + C
+ 
+ 
+INTEGRAIS TRIGONOMÉTRICAS
+ 
+    ∫ cos(x) dx = sen(x) + C
+ 
+    ∫ sen(x) dx = -cos(x) + C
+ 
+ 
+INTEGRAIS EXPONENCIAIS
+ 
+    ∫ eˣ dx = eˣ + C
+ 
+ 
+INTEGRAL DE 1/x
+ 
+    ∫ 1/x dx = ln|x| + C
+"""
+ 
+texto_aplicacoes_integrais = """
+6 — APLICAÇÕES DAS INTEGRAIS
+ 
+ 
+ÁREA SOB UMA CURVA
+ 
+Se:
+ 
+    f(x) ≥ 0
+ 
+então:
+ 
+        b
+    A = ∫ f(x) dx
+        a
+ 
+ 
+ÁREA ENTRE DUAS CURVAS
+ 
+Se f(x) está acima de g(x):
+ 
+        b
+    A = ∫ [f(x) - g(x)] dx
+        a
+ 
+ 
+VOLUME POR DISCOS
+ 
+Se giramos uma função ao redor de um eixo:
+ 
+        b
+    V = π ∫ [f(x)]² dx
+        a
+ 
+ 
+VOLUME POR ANÉIS
+ 
+Quando existe um raio externo e um interno:
+ 
+        b
+    V = π ∫ [R(x)² - r(x)²] dx
+        a
+ 
+ 
+MÉTODO DAS CASCAS CILÍNDRICAS
+ 
+Outra maneira de calcular volumes de sólidos de revolução.
+ 
+A ideia básica é somar muitas cascas cilíndricas pequenas.
+ 
+ 
+DISTÂNCIA
+ 
+Se v(t) é velocidade:
+ 
+    deslocamento = ∫ v(t) dt
+ 
+ 
+Se queremos distância total e a velocidade muda de sinal,
+precisamos tomar cuidado com o valor absoluto.
+ 
+ 
+VALOR MÉDIO DE UMA FUNÇÃO
+ 
+        1
+    f̄ = ───── ∫ f(x) dx
+        b-a   a
+ 
+ 
+Isso representa a altura constante que produziria a mesma
+área acumulada no intervalo.
+ 
+ 
+TRABALHO
+ 
+Em Física:
+ 
+    W = ∫ F(x) dx
+ 
+A integral permite somar pequenas quantidades de trabalho
+produzidas ao longo do deslocamento.
+"""
+ 
+texto_mapa = """
+🧠 O MAPA MENTAL DO CÁLCULO I
+ 
+ 
+                    FUNÇÕES
+                       │
+                       ▼
+                    LIMITES
+                       │
+              ┌────────┴────────┐
+              │                 │
+              ▼                 ▼
+        CONTINUIDADE        DERIVADA
+                                │
+                    ┌───────────┼───────────┐
+                    │           │           │
+                    ▼           ▼           ▼
+                CRESCIMENTO  MÁX/MÍN   CONCAVIDADE
+                    │           │           │
+                    └───────────┼───────────┘
+                                │
+                                ▼
+                         APLICAÇÕES
+                                │
+                                ▼
+                           INTEGRAL
+                                │
+                    ┌───────────┼───────────┐
+                    │           │           │
+                    ▼           ▼           ▼
+                 ÁREA        VOLUME     ACUMULAÇÃO
+                    │           │           │
+                    └───────────┼───────────┘
+                                │
+                                ▼
+                 TEOREMA FUNDAMENTAL
+                      DO CÁLCULO
+ 
+ 
+A GRANDE CONEXÃO
+ 
+ 
+DERIVADA:
+ 
+    "Quanto está mudando agora?"
+ 
+ 
+INTEGRAL:
+ 
+    "Quanto acumulou ao longo do caminho?"
+ 
+ 
+E O TEOREMA FUNDAMENTAL DIZ, EM ESSÊNCIA:
+ 
+    derivar e integrar são operações profundamente relacionadas.
+ 
+ 
+Se:
+ 
+    F'(x) = f(x)
+ 
+então:
+ 
+        b
+    ∫ f(x) dx = F(b) - F(a)
+        a
+ 
+ 
+Essa conexão é uma das ideias centrais de todo o Cálculo.
+ 
+ 
+=============================================================
+ 
+O QUE VOCÊ DEVE CONSEGUIR FAZER AO FINAL DE CÁLCULO I?
+ 
+✓ Interpretar funções
+ 
+✓ Calcular e interpretar limites
+ 
+✓ Identificar indeterminações
+ 
+✓ Verificar continuidade
+ 
+✓ Calcular derivadas
+ 
+✓ Entender derivada geometricamente
+ 
+✓ Aplicar regra da cadeia
+ 
+✓ Encontrar máximos e mínimos
+ 
+✓ Estudar crescimento e decrescimento
+ 
+✓ Analisar concavidade
+ 
+✓ Resolver problemas de otimização
+ 
+✓ Interpretar taxas relacionadas
+ 
+✓ Entender a integral como soma
+ 
+✓ Calcular integrais
+ 
+✓ Usar o Teorema Fundamental do Cálculo
+ 
+✓ Calcular áreas
+ 
+✓ Calcular volumes
+ 
+✓ Interpretar quantidades acumuladas
+ 
+ 
+=============================================================
+ 
+UMA ÚLTIMA IDEIA
+ 
+O Cálculo não é simplesmente um conjunto de fórmulas.
+ 
+Ele é uma linguagem para descrever:
+ 
+    MUDANÇA
+ 
+e
+ 
+    ACUMULAÇÃO.
+ 
+ 
+A derivada descreve mudança.
+ 
+A integral descreve acumulação.
+ 
+O limite permite tornar essas ideias precisas.
+"""
+ 
+ 
+# Caixa 3 - Função auxiliar para exibir um texto formatado em uma aba
+ 
+def caixa_texto(texto):
+    texto_seguro = html.escape(texto)
+    conteudo = (
+        "<pre style='font-family: monospace; font-size: 13px; "
+        "white-space: pre-wrap; line-height: 1.3;'>"
+        + texto_seguro
+        + "</pre>"
     )
-
-if pagina == "Simuladores":
-    st.header("Simuladores interativos")
-    st.write("Use os controles para visualizar os conceitos na prática.")
-    aba_limite, aba_derivada, aba_riemann = st.tabs(
-        ["Limites", "Reta tangente", "Soma de Riemann"]
+    return widgets.HTML(
+        value=conteudo,
+        layout=widgets.Layout(width="100%", height="480px", overflow="auto",
+                               border="1px solid #ccc", padding="10px")
     )
-
-    with aba_limite:
-        st.subheader("Limite de (x²-4)/(x-2) quando x→2")
-        distancias = [1, 0.5, 0.1, 0.01, 0.001]
-        linhas = []
-        for d in distancias:
-            x_esq = 2 - d
-            x_dir = 2 + d
-            linhas.append({"x (esquerda)": arredonda(x_esq), "f(x)": arredonda(f_limite(x_esq))})
-            linhas.append({"x (direita)": arredonda(x_dir), "f(x)": arredonda(f_limite(x_dir))})
-        st.dataframe(linhas, hide_index=True, use_container_width=True)
-        st.info("Os valores de f(x) se aproximam de 4 pelos dois lados, então o limite é 4.")
-
-    with aba_derivada:
-        st.subheader("Derivada como inclinação da reta tangente em f(x)=x²")
-        a = st.slider("Escolha o ponto de tangência (a)", min_value=-3.0, max_value=3.0, value=1.0, step=0.5)
-        xs = [(-3.0 + 0.1 * i) for i in range(61)]
-        curva = [f_exemplo(x) for x in xs]
-        tangente = [reta_tangente(a, x) for x in xs]
-        st.line_chart({"f(x)=x²": curva, "reta tangente": tangente}, height=320)
-        st.metric("Inclinação da tangente (f'(a))", arredonda(2 * a))
-        st.caption("Para f(x)=x², a derivada é f'(x)=2x.")
-
-    with aba_riemann:
-        st.subheader("Aproximação de área por soma de Riemann para f(x)=x² em [0,b]")
-        b = st.slider("Valor de b", min_value=1.0, max_value=6.0, value=4.0, step=0.5)
-        n = st.slider("Número de retângulos", min_value=2, max_value=120, value=12, step=1)
-        aproximada = soma_riemann_esquerda(0.0, b, n)
-        exata = integral_exata_x2(0.0, b)
-        erro = abs(exata - aproximada)
-
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Área aproximada (Riemann)", arredonda(aproximada))
-        c2.metric("Área exata", arredonda(exata))
-        c3.metric("Erro absoluto", arredonda(erro))
-        st.caption("Com mais retângulos, o erro tende a diminuir.")
-
-if pagina == "Questões":
-    st.header("Página de questões de marcar")
-    st.write("Monte um simulado, marque as respostas e clique em **Corrigir**.")
-
-    quantidade = st.slider("Quantidade de questões", min_value=5, max_value=len(QUESTOES), value=12, step=1)
-
-    if "quiz_id" not in st.session_state:
-        st.session_state.quiz_id = 0
-    if "quiz_indices" not in st.session_state:
-        st.session_state.quiz_indices = random.sample(range(len(QUESTOES)), quantidade)
-
-    if st.button("Gerar novo simulado"):
-        st.session_state.quiz_id += 1
-        st.session_state.quiz_indices = random.sample(range(len(QUESTOES)), quantidade)
-
-    if len(st.session_state.quiz_indices) != quantidade:
-        st.session_state.quiz_indices = random.sample(range(len(QUESTOES)), quantidade)
-
-    respostas = []
-    quiz_id = st.session_state.quiz_id
-    questoes_ativas = [QUESTOES[i] for i in st.session_state.quiz_indices]
-
-    for i, q in enumerate(questoes_ativas):
-        resposta = st.radio(
-            f"{i + 1}) [{q['topico']}] {q['pergunta']}",
-            q["opcoes"],
-            index=None,
-            key=f"q_{quiz_id}_{i}",
-        )
-        respostas.append(resposta)
-
-    if st.button("Corrigir"):
-        acertos = 0
-        st.subheader("Resultado")
-        for i, q in enumerate(questoes_ativas):
-            correta = q["opcoes"][q["correta"]]
-            marcada = respostas[i]
-            if marcada == correta:
-                acertos += 1
-                st.markdown(
-                    f"<div style='background-color:#d4edda; color:#155724; padding:10px; "
-                    f"border-radius:8px; margin-bottom:8px;'>"
-                    f"<strong>{i + 1}) [{q['topico']}] {q['pergunta']}</strong><br>"
-                    f"Você marcou: {marcada}<br>✅ Correto!"
-                    f"</div>",
-                    unsafe_allow_html=True,
-                )
-            else:
-                texto_marcada = marcada if marcada else "Não respondida"
-                st.markdown(
-                    f"<div style='background-color:#f8d7da; color:#721c24; padding:10px; "
-                    f"border-radius:8px; margin-bottom:8px;'>"
-                    f"<strong>{i + 1}) [{q['topico']}] {q['pergunta']}</strong><br>"
-                    f"Você marcou: {texto_marcada}<br>"
-                    f"❌ Errado. Gabarito: <strong>{correta}</strong>"
-                    f"</div>",
-                    unsafe_allow_html=True,
-                )
-
-        percentual = (acertos / len(questoes_ativas)) * 100
-        st.info(f"Pontuação final: {acertos}/{len(questoes_ativas)} ({arredonda(percentual)}%)")
+ 
+ 
+# Caixa 4 - Funções dos gráficos interativos (matplotlib, sem tkinter)
+ 
+def grafico_limite(botao):
+    with saida_limite:
+        clear_output(wait=True)
+ 
+        x = np.linspace(-3, 3, 1000)
+        y = (x**2 - 4) / (x - 2)
+        mascara = np.abs(x - 2) > 0.01
+ 
+        plt.figure(figsize=(7, 4.5))
+        plt.plot(x[mascara], y[mascara], label="f(x) = (x² - 4) / (x - 2)")
+        plt.scatter([2], [4], s=80, facecolors="white", edgecolors="black", zorder=5)
+        plt.axvline(2, linestyle="--", alpha=0.5)
+        plt.axhline(4, linestyle="--", alpha=0.5)
+        plt.title("Quando x se aproxima de 2, f(x) se aproxima de 4")
+        plt.xlabel("x")
+        plt.ylabel("f(x)")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+ 
+ 
+def grafico_derivada(botao):
+    with saida_derivada:
+        clear_output(wait=True)
+ 
+        x = np.linspace(-3, 3, 500)
+        y = x**2
+ 
+        a = 1
+        f_a = a**2
+        derivada = 2 * a
+        tangente = f_a + derivada * (x - a)
+ 
+        plt.figure(figsize=(7, 4.5))
+        plt.plot(x, y, label="f(x) = x²")
+        plt.plot(x, tangente, linestyle="--", label="Reta tangente")
+        plt.scatter([a], [f_a], s=80, zorder=5)
+        plt.axhline(0, alpha=0.4)
+        plt.axvline(0, alpha=0.4)
+        plt.title("A derivada em x = 1 é a inclinação da reta tangente")
+        plt.xlabel("x")
+        plt.ylabel("y")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+ 
+ 
+def grafico_riemann(botao):
+    with saida_riemann:
+        clear_output(wait=True)
+ 
+        x = np.linspace(0, 4, 500)
+        y = x**2
+ 
+        plt.figure(figsize=(7.5, 5))
+        plt.plot(x, y, linewidth=2, label="f(x) = x²")
+ 
+        n = 12
+        pontos = np.linspace(0, 4, n + 1)
+        dx = 4 / n
+        valor = 0
+ 
+        for i in range(n):
+            esquerda = pontos[i]
+            altura = esquerda**2
+            plt.bar(esquerda, altura, width=dx, align="edge", alpha=0.3, edgecolor="black")
+            valor += altura * dx
+ 
+        plt.title(f"Soma de Riemann com {n} retângulos\nÁrea aproximada = {valor:.3f}")
+        plt.xlabel("x")
+        plt.ylabel("f(x)")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+ 
+ 
+# Caixa 5 - Montagem de cada aba (texto + botão + gráfico quando existir)
+ 
+aba_inicio = caixa_texto(texto_inicio)
+aba_funcoes = caixa_texto(texto_funcoes)
+ 
+saida_limite = widgets.Output()
+botao_limite = widgets.Button(description="📈 Visualizar aproximação de um limite")
+botao_limite.on_click(grafico_limite)
+aba_limites = widgets.VBox([caixa_texto(texto_limites), botao_limite, saida_limite])
+ 
+saida_derivada = widgets.Output()
+botao_derivada = widgets.Button(description="📐 Visualizar derivada como reta tangente")
+botao_derivada.on_click(grafico_derivada)
+aba_derivadas = widgets.VBox([caixa_texto(texto_derivadas), botao_derivada, saida_derivada])
+ 
+aba_aplicacoes_derivadas = caixa_texto(texto_aplicacoes_derivadas)
+ 
+saida_riemann = widgets.Output()
+botao_riemann = widgets.Button(description="▥ Visualizar soma de Riemann")
+botao_riemann.on_click(grafico_riemann)
+aba_integrais = widgets.VBox([caixa_texto(texto_integrais), botao_riemann, saida_riemann])
+ 
+aba_aplicacoes_integrais = caixa_texto(texto_aplicacoes_integrais)
+aba_mapa = caixa_texto(texto_mapa)
+ 
+ 
+# Caixa 6 - Montagem final em abas (equivalente ao ttk.Notebook do tkinter)
+ 
+abas = widgets.Tab(children=[
+    aba_inicio,
+    aba_funcoes,
+    aba_limites,
+    aba_derivadas,
+    aba_aplicacoes_derivadas,
+    aba_integrais,
+    aba_aplicacoes_integrais,
+    aba_mapa,
+])
+ 
+titulos = [
+    "🏠 Início",
+    "1. Funções",
+    "2. Limites",
+    "3. Derivadas",
+    "4. Aplicações",
+    "5. Integrais",
+    "6. Aplicações da Integral",
+    "🧠 Mapa do Cálculo",
+]
+ 
+for i, t in enumerate(titulos):
+    abas.set_title(i, t)
+ 
+display(widgets.HTML(
+    "<h2 style='text-align:center'>CÁLCULO I — GUIA INTERATIVO</h2>"
+    "<p style='text-align:center'>Do conceito de limite até o Teorema "
+    "Fundamental do Cálculo</p>"
+))
+display(abas)
